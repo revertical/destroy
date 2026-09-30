@@ -58,8 +58,25 @@ def rnd_bool():
     return random.random() < 0.5
 
 
-def rnd_transform():
-    """Random position + rotation matrix (absolute, in PT)."""
+def rnd_transform(element=None):
+    """Random position + rotation matrix (absolute, in PT).
+
+    The API only lets videos and tables be TRANSLATED - rotation/shear
+    isn't supported for them - so those get a plain random move instead
+    of a full rotate (which would be rejected).
+    """
+    if element is not None and (element.get("video") is not None
+                                or element.get("table") is not None):
+        return {
+            "scaleX": 1,
+            "scaleY": 1,
+            "shearX": 0,
+            "shearY": 0,
+            "translateX": random.uniform(-30, 950),
+            "translateY": random.uniform(-30, 530),
+            "unit": "PT",
+        }
+
     angle = random.uniform(-0.7, 0.7)            # radians (about 40 deg max)
     scale = random.uniform(0.7, 1.3)
     return {
@@ -215,7 +232,7 @@ def phase_crumble(service, presentation_id, slide_id, background_too):
                 "updatePageElementTransform": {
                     "objectId": element_id,
                     "applyMode": "ABSOLUTE",
-                    "transform": rnd_transform(),
+                    "transform": rnd_transform(element),
                 }
             }
         )
@@ -395,7 +412,7 @@ def phase_meltdown(service, presentation_id, slide_id):
                 "updatePageElementTransform": {
                     "objectId": element["objectId"],
                     "applyMode": "ABSOLUTE",
-                    "transform": rnd_transform(),
+                    "transform": rnd_transform(element),
                 }
             }
         )
