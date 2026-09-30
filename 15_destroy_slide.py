@@ -17,8 +17,9 @@ Between every phase it waits 5-10 s, so quota isn't burned in one blast
 and there's time to enjoy the show / see each phase in the editor.
 
 SAFETY: you type the presentation + slide ids yourself, the script shows
-you what it will destroy, and it refuses to touch slides that mention
-"welcome" or "rules" without an explicit DESTROY confirmation.
+you what it will destroy, and it guards protected slides: if the slide
+title contains "[DON'T DELETE]" it demands a full typed-out phrase, and
+slides that mention "welcome" or "rules" need an explicit DESTROY anyway.
 
 Run:  python 15_destroy_slide.py
 """
@@ -36,7 +37,8 @@ SPAM_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!?$%
 
 FONTS = [
     "Arial", "Comic Sans MS", "Courier New", "Georgia", "Impact",
-    "Tahoma", "Trebuchet MS", "Verdana", "Times New Roman",
+    "Tahoma", "Trebuchet MS", "Verdana", "Times New Roman", "Google Sans",
+    "Ubuntu"
 ]
 
 
@@ -112,7 +114,24 @@ def confirm_target(presentation_id, slide_id):
     print("This slide WILL BE VANDALISED AND DELETED. Not undoable.")
 
     content = slide_text(slide).lower()
-    if re.search(r"\b(rule|rules|welcome)\b", content):
+
+    # Strongest gate: the slide title is marked [DON'T DELETE]. Requires
+    # typing out a full sentence, not just a short word.
+    if "[don't delete]" in content:
+        phrase = (
+            "I UNDERSTAND THIS SLIDE IS MARKED [DON'T DELETE] "
+            "AND I STILL CHOOSE TO DESTROY IT"
+        )
+        print("\n!!! THIS SLIDE IS PROTECTED - its title contains [DON'T DELETE] !!!")
+        print("This marker usually means an admin wants the slide kept.")
+        print("Destroying it removes the sign AND the slide permanently.")
+        print()
+        print(f'To continue, type this exact phrase:\n  "{phrase}"')
+        answer = input("> ").strip().upper()
+        if answer != phrase:
+            raise SystemExit("Aborted - [DON'T DELETE] slide left alone.")
+
+    elif re.search(r"\b(rule|rules|welcome)\b", content):
         print("WARNING: this slide mentions rules/welcome. It looks like a protected slide.")
         answer = input('Type DESTROY to confirm anyway: ')
         if answer.strip() != "DESTROY":
